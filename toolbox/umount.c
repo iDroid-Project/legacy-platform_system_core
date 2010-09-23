@@ -32,7 +32,7 @@ static int loop_umount(const char* path)
             if (strcmp(path, mount_path) == 0) {
 				result = stat(path, &file_stat);
 				if(result < 0)
-					continue;
+					break;
 
 				if(major(file_stat.st_rdev) == 7) // 7 is loopback, riiight? :P
 				{ 
@@ -41,18 +41,20 @@ static int loop_umount(const char* path)
 
 					if (loop_fd < -1) {
 						perror("open loop device failed");
-						return 1;
+						result = 1;
+						break;
 					}
 
 					if (ioctl(loop_fd, LOOP_CLR_FD, 0) < 0) {
 						perror("ioctl LOOP_CLR_FD failed");
-						return 1;
+						result = 1;
+						break;
 					}
 
 					close(loop_fd);
 					result = 0;
+                	break;
 				}
-                break;
             }
         }
     } while (count == 3);
