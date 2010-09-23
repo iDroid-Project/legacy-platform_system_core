@@ -1,18 +1,18 @@
 
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <linux/loop.h>
 
-// FIXME - only one loop mount is supported at a time
-#define LOOP_DEVICE "/dev/block/loop0"
-
-static int is_loop_mount(const char* path)
+static int loop_umount(const char* path)
 {
-    FILE* f;
+	FILE *f;
+	struct stat file_stat;
+	char dev_name[256];
     int count;
     char device[256];
     char mount_path[256];
@@ -29,8 +29,29 @@ static int is_loop_mount(const char* path)
     do {
         count = fscanf(f, "%255s %255s %255s\n", device, mount_path, rest);
         if (count == 3) {
-            if (strcmp(LOOP_DEVICE, device) == 0 && strcmp(path, mount_path) == 0) {
-                result = 1;
+            if (strcmp(path, mount_path) == 0) {
+				result = stat(path, &file_stat);
+				if(result < 0)
+					continue;
+
+				if(major(file_stat.st_rdev) == 7) // 7 is loopback, riiight? :P
+				{ 
+					// free the loop device
+					int loop_fd = open(device, O_RDONLY);
+
+					if (loop_fd < -1) {
+						perror("open loop device failed");
+						return 1;
+					}
+
+					if (ioctl(loop_fd, LOOP_CLR_FD, 0) < 0) {
+						perror("ioctl LOOP_CLR_FD failed");
+						return 1;
+					}
+
+					close(loop_fd);
+					result = 0;
+				}
                 break;
             }
         }
@@ -42,33 +63,21 @@ static int is_loop_mount(const char* path)
 
 int umount_main(int argc, char *argv[])
 {
-    int loop, loop_fd;
-    
     if(argc != 2) {
         fprintf(stderr,"umount <path>\n");
         return 1;
     }
 
-    loop = is_loop_mount(argv[1]);
     if(umount(argv[1])){
         fprintf(stderr,"failed.\n");
         return 1;
     }
 
-    if (loop) {
-        // free the loop device
-        loop_fd = open(LOOP_DEVICE, O_RDONLY);
-        if (loop_fd < -1) {
-            perror("open loop device failed");
-            return 1;
-        }
-        if (ioctl(loop_fd, LOOP_CLR_FD, 0) < 0) {
-            perror("ioctl LOOP_CLR_FD failed");
-            return 1;
-        }
-
-        close(loop_fd);
-    }
+	if(loop_umount(argv[1]))
+	{
+		fprintf(stderr, "loop umount failed.\n");
+		return 1;
+	}
 
     return 0;
 }
