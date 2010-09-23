@@ -1,9 +1,12 @@
 /*
  * mount.c, by rmk
+ * 
+ * Portions (c) 2010 Ricky Taylor
  */
 
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
@@ -14,9 +17,6 @@
 #include <linux/loop.h>
 
 #define ARRAY_SIZE(x)	(sizeof(x) / sizeof(x[0]))
-
-// FIXME - only one loop mount is supported at a time
-#define LOOP_DEVICE "/dev/block/loop0"
 
 struct mount_opts {
 	const char str[8];
@@ -137,23 +137,55 @@ do_mount(char *dev, char *dir, char *type, unsigned long rwflag, void *data, int
 	int error = 0;
 
     if (loop) {
-        int file_fd, device_fd;
+		int i;
         int flags;
+        int file_fd, device_fd=0;
+		const int max_loop = 50;
+		const char loop_template[] = "/dev/block/loop%d";
+		char current_loop[sizeof(loop_template) + 3]; // 50 is 2 digs, so 3.
+
+
+		for(i = 0; i < max_loop; i++) // This is the 
+		{
+			struct stat file_stat;
+
+			if(sprintf(current_loop, loop_template, i) <= 0)
+			{
+				perror("failed to calculate loop path");
+				continue;
+			}
+
+			if(stat(current_loop, &file_stat) >= 0) // File already exists!
+				continue;
+
+			// We have a new valid filename! :D
+			device_fd = mknod(current_loop, S_IFBLK|S_IRWXU|S_IRWXG|S_IRWXO, makedev(7, i));
+		}
+
+		if(i == max_loop) // Loop finished before finding a loop node!
+		{
+			perror("no loopback devices left!");
+			return 1;
+		}
 
         flags = (rwflag & MS_RDONLY) ? O_RDONLY : O_RDWR;
         
-        // FIXME - only one loop mount supported at a time
         file_fd = open(dev, flags);
         if (file_fd < -1) {
             perror("open backing file failed");
             return 1;
         }
-        device_fd = open(LOOP_DEVICE, flags);
-        if (device_fd < -1) {
-            perror("open loop device failed");
-            close(file_fd);
-            return 1;
-        }
+
+		if(device_fd == 0)
+		{
+			device_fd = open(current_loop, flags);
+			if (device_fd < -1) {
+				perror("open loop device failed");
+				close(file_fd);
+				return 1;
+			}
+		}
+
         if (ioctl(device_fd, LOOP_SET_FD, file_fd) < 0) {
             perror("ioctl LOOP_SET_FD failed");
             close(file_fd);
@@ -163,7 +195,7 @@ do_mount(char *dev, char *dir, char *type, unsigned long rwflag, void *data, int
 
         close(file_fd);
         close(device_fd);
-        dev = LOOP_DEVICE;
+        dev = current_loop;
     }
 
 	while ((s = strsep(&type, ",")) != NULL) {
