@@ -67,6 +67,22 @@
 #define VENDOR_ID_KYOCERA       0x0482
 // Pantech's USB Vendor ID
 #define VENDOR_ID_PANTECH       0x10A9
+// Qualcomm's USB Vendor ID
+#define VENDOR_ID_QUALCOMM      0x05c6
+// NEC's USB Vendor ID
+#define VENDOR_ID_NEC           0x0409
+// Panasonic Mobile Communication's USB Vendor ID
+#define VENDOR_ID_PMC           0x04DA
+// Toshiba's USB Vendor ID
+#define VENDOR_ID_TOSHIBA       0x0930
+// SK Telesys's USB Vendor ID
+#define VENDOR_ID_SK_TELESYS    0x1F53
+// KT Tech's USB Vendor ID
+#define VENDOR_ID_KT_TECH       0x2116
+// Asus's USB Vendor ID
+#define VENDOR_ID_ASUS          0x0b05
+// Philips's USB Vendor ID
+#define VENDOR_ID_PHILIPS       0x0471
 
 
 /** built-in vendor list */
@@ -87,6 +103,14 @@ int builtInVendorIds[] = {
     VENDOR_ID_ZTE,
     VENDOR_ID_KYOCERA,
     VENDOR_ID_PANTECH,
+    VENDOR_ID_QUALCOMM,
+    VENDOR_ID_NEC,
+    VENDOR_ID_PMC,
+    VENDOR_ID_TOSHIBA,
+    VENDOR_ID_SK_TELESYS,
+    VENDOR_ID_KT_TECH,
+    VENDOR_ID_ASUS,
+    VENDOR_ID_PHILIPS,
 };
 
 #define BUILT_IN_VENDOR_COUNT    (sizeof(builtInVendorIds)/sizeof(builtInVendorIds[0]))

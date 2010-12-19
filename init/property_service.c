@@ -27,7 +27,6 @@
 
 #include <cutils/misc.h>
 #include <cutils/sockets.h>
-#include <cutils/ashmem.h>
 
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include <sys/_system_properties.h>
@@ -43,10 +42,15 @@
 
 #include "property_service.h"
 #include "init.h"
+#include "util.h"
+#include "log.h"
 
 #define PERSISTENT_PROPERTY_DIR  "/data/property"
 
 static int persistent_properties_loaded = 0;
+static int property_area_inited = 0;
+
+static int property_set_fd = -1;
 
 /* White list of permissions for setting property services. */
 struct {
@@ -105,21 +109,31 @@ static int init_workspace(workspace *w, size_t size)
     void *data;
     int fd;
 
-    fd = ashmem_create_region("system_properties", size);
-    if(fd < 0)
+        /* dev is a tmpfs that we can use to carve a shared workspace
+         * out of, so let's do that...
+         */
+    fd = open("/dev/__properties__", O_RDWR | O_CREAT, 0600);
+    if (fd < 0)
         return -1;
+
+    if (ftruncate(fd, size) < 0)
+        goto out;
 
     data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(data == MAP_FAILED)
         goto out;
 
-    /* allow the wolves we share with to do nothing but read */
-    ashmem_set_prot_region(fd, PROT_READ);
+    close(fd);
+
+    fd = open("/dev/__properties__", O_RDONLY);
+    if (fd < 0)
+        return -1;
+
+    unlink("/dev/__properties__");
 
     w->data = data;
     w->size = size;
     w->fd = fd;
-
     return 0;
 
 out:
@@ -160,7 +174,7 @@ static int init_property_area(void)
 
         /* plug into the lib property services */
     __system_property_area__ = pa;
-
+    property_area_inited = 1;
     return 0;
 }
 
@@ -187,7 +201,7 @@ static int property_write(prop_info *pi, const char *value)
  *
  * Returns 1 if uid allowed, 0 otherwise.
  */
-static int check_control_perms(const char *name, int uid, int gid) {
+static int check_control_perms(const char *name, unsigned int uid, unsigned int gid) {
     int i;
     if (uid == AID_SYSTEM || uid == AID_ROOT)
         return 1;
@@ -208,7 +222,7 @@ static int check_control_perms(const char *name, int uid, int gid) {
  * Checks permissions for setting system properties.
  * Returns 1 if uid allowed, 0 otherwise.
  */
-static int check_perms(const char *name, unsigned int uid, int gid)
+static int check_perms(const char *name, unsigned int uid, unsigned int gid)
 {
     int i;
     if (uid == 0)
@@ -344,7 +358,7 @@ static int property_list(void (*propfn)(const char *key, const char *value, void
     return 0;
 }
 
-void handle_property_set_fd(int fd)
+void handle_property_set_fd()
 {
     prop_msg msg;
     int s;
@@ -355,7 +369,7 @@ void handle_property_set_fd(int fd)
     socklen_t addr_size = sizeof(addr);
     socklen_t cr_size = sizeof(cr);
 
-    if ((s = accept(fd, (struct sockaddr *) &addr, &addr_size)) < 0) {
+    if ((s = accept(property_set_fd, (struct sockaddr *) &addr, &addr_size)) < 0) {
         return;
     }
 
@@ -493,7 +507,12 @@ void property_init(void)
     load_properties_from_file(PROP_PATH_RAMDISK_DEFAULT);
 }
 
-int start_property_service(void)
+int properties_inited(void)
+{
+    return property_area_inited;
+}
+
+void start_property_service(void)
 {
     int fd;
 
@@ -504,10 +523,15 @@ int start_property_service(void)
     load_persistent_properties();
 
     fd = create_socket(PROP_SERVICE_NAME, SOCK_STREAM, 0666, 0, 0);
-    if(fd < 0) return -1;
+    if(fd < 0) return;
     fcntl(fd, F_SETFD, FD_CLOEXEC);
     fcntl(fd, F_SETFL, O_NONBLOCK);
 
     listen(fd, 8);
-    return fd;
+    property_set_fd = fd;
+}
+
+int get_property_set_fd()
+{
+    return property_set_fd;
 }

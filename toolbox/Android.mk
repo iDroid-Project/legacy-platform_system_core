@@ -41,7 +41,7 @@ TOOLS := \
 	printenv \
 	smd \
 	chmod \
-    chown \
+	chown \
 	newfs_msdos \
 	netstat \
 	ioctl \
@@ -50,9 +50,11 @@ TOOLS := \
 	top \
 	iftop \
 	id \
+	uptime \
 	vmstat \
 	nandread \
-        ionice
+	ionice \
+	lsof
 
 LOCAL_SRC_FILES:= \
 	toolbox.c \

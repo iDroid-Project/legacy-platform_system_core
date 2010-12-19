@@ -1628,6 +1628,9 @@ setprompt(int which)
 #ifdef WITH_HISTORY
 	if (!el)
 #endif
+#ifdef WITH_LINENOISE
+        if (! in_interactive_mode() )
+#endif
 		out2str(getprompt(NULL));
 }
 
