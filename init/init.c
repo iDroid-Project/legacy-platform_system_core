@@ -649,7 +649,7 @@ static int bootchart_init_action(int nargs, char **args)
 }
 #endif
 
-void printString(char * string)
+void printString(const char * string)
 {
     int fd,lenght;
     fd = open("/dev/tty0", O_WRONLY);

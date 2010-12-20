@@ -501,7 +501,7 @@ out:
 
 static void process_firmware_event(struct uevent *uevent)
 {
-    char *root, *loading, *data, *file1 = NULL, *file2 = NULL;
+    char *root, *loading, *data, *file = NULL, *file1 = NULL, *file2 = NULL;
     int l, loading_fd, data_fd, fw_fd;
 
     log_event_print("firmware event { '%s', '%s' }\n",
