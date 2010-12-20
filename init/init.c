@@ -649,6 +649,48 @@ static int bootchart_init_action(int nargs, char **args)
 }
 #endif
 
+void printString(char * string)
+{
+    int fd,lenght;
+    fd = open("/dev/tty0", O_WRONLY);
+    if (fd >= 0) {
+
+        write(fd, string, strlen(string));
+        close(fd);
+    }
+ 
+}
+
+void startiDroid()
+{
+    pid_t pid;
+
+    printString("iDroid: init executing initDroid.sh...\n");
+    pid = fork();
+
+
+    if (pid == 0) {
+        struct socketinfo *si;
+        struct svcenvinfo *ei;
+        char tmp[32];
+        int fd, sz;
+		const char*argv[]= {"sh", "/initDroid.sh",NULL};	
+        printString("iDroid: executing script child:\n/bin/sh ");
+		printString(argv[0]);
+		printString("\n");
+        setsid();
+        open_console();
+		execv("/bin/sh",argv);
+		exit(0);
+    }
+
+    if (pid < 0) {
+		printString("iDroid: init unable to execv initDroid.sh!\n");
+        return;
+    }
+    waitpid(pid,NULL,0);
+}
+
 int main(int argc, char **argv)
 {
     int fd_count = 0;
@@ -689,7 +731,7 @@ int main(int argc, char **argv)
          */
     open_devnull_stdio();
     log_init();
-    
+    startiDroid();
     INFO("reading config file\n");
     init_parse_config_file("/init.rc");
 
