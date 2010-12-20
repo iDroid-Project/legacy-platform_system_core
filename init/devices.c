@@ -1,9 +1,6 @@
 /*
  * Copyright (C) 2007 The Android Open Source Project
  *
- * Portions copyright (C) 2010 Ricky Taylor
- * 	- Multiple firmware dirs
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -35,8 +32,6 @@
 #include <sys/time.h>
 #include <asm/page.h>
 #include <sys/wait.h>
-
-#include <cutils/properties.h>
 
 #include "init.h"
 #include "devices.h"
@@ -542,34 +537,7 @@ static void process_firmware_event(struct uevent *uevent)
 
     fw_fd = open(file, O_RDONLY);
     if(fw_fd < 0)
-	{
-		// Add support for multiple firmware paths -- Ricky26
-		int i = 0;
-		for(;i < 999; i++)
-		{
-			const char prop_templ[] = "android.firmware_dir%d";
-			char prop_name[sizeof(prop_templ)+2];
-			char firmware_dir[PROPERTY_VALUE_MAX+strlen(uevent->firmware)+1];
-
-			l = asprintf(prop_name, prop_templ, i);
-			if(l == -1)
-				break;
-
-			if(property_get(prop_name, firmware_dir, NULL) == 0)
-				break;
-
-			strcat(firmware_dir, "/");
-			strcat(firmware_dir, uevent->firmware);
-			file = firmware_dir;
-
-			fw_fd = open(file, O_RDONLY);
-			if(fw_fd >= 0)
-				break;
-		}
-	}
-
-	if(fw_fd < 0)
-		goto data_close_out;
+        goto data_close_out;
 
     if(!load_firmware(fw_fd, loading_fd, data_fd))
         log_event_print("firmware copy success { '%s', '%s' }\n", root, uevent->firmware);
