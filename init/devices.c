@@ -41,7 +41,7 @@
 
 #define SYSFS_PREFIX    "/sys"
 #define FIRMWARE_DIR1   "/etc/firmware"
-#define FIRMWARE_DIR2   "/vendor/firmware"
+#define FIRMWARE_DIR2   "/host/firmware"
 
 static int device_fd = -1;
 
