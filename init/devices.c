@@ -39,8 +39,12 @@
 #include "list.h"
 
 #define SYSFS_PREFIX    "/sys"
-#define FIRMWARE_DIR1   "/etc/firmware"
-#define FIRMWARE_DIR2   "/vendor/firmware"
+/* *
+ * iDroid does not need /vendor/firmware because we cannot distribute zephyr firmwares - they are copyrighted
+ * /host is mounted by initDroid.sh
+ */
+#define FIRMWARE_DIR1   "/host/firmware"
+#define FIRMWARE_DIR2   "/etc/firmware"
 
 static int device_fd = -1;
 
