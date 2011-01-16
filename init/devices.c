@@ -33,7 +33,6 @@
 #include <asm/page.h>
 #include <sys/wait.h>
 
-#include "init.h"
 #include "devices.h"
 #include "util.h"
 #include "log.h"
@@ -41,7 +40,7 @@
 
 #define SYSFS_PREFIX    "/sys"
 #define FIRMWARE_DIR1   "/etc/firmware"
-#define FIRMWARE_DIR2   "/host/firmware"
+#define FIRMWARE_DIR2   "/vendor/firmware"
 
 static int device_fd = -1;
 
@@ -501,7 +500,7 @@ out:
 
 static void process_firmware_event(struct uevent *uevent)
 {
-    char *root, *loading, *data, *file = NULL, *file1 = NULL, *file2 = NULL;
+    char *root, *loading, *data, *file1 = NULL, *file2 = NULL;
     int l, loading_fd, data_fd, fw_fd;
 
     log_event_print("firmware event { '%s', '%s' }\n",
@@ -535,9 +534,12 @@ static void process_firmware_event(struct uevent *uevent)
     if(data_fd < 0)
         goto loading_close_out;
 
-    fw_fd = open(file, O_RDONLY);
-    if(fw_fd < 0)
-        goto data_close_out;
+    fw_fd = open(file1, O_RDONLY);
+    if(fw_fd < 0) {
+        fw_fd = open(file2, O_RDONLY);
+        if(fw_fd < 0)
+            goto data_close_out;
+    }
 
     if(!load_firmware(fw_fd, loading_fd, data_fd))
         log_event_print("firmware copy success { '%s', '%s' }\n", root, uevent->firmware);
