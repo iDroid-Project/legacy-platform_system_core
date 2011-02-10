@@ -302,8 +302,10 @@ void handle_packet(apacket *p, atransport *t)
 {
     asocket *s;
 
-    D("handle_packet() %d\n", p->msg.command);
-
+    D("handle_packet() %c%c%c%c\n", ((char*) (&(p->msg.command)))[0],
+            ((char*) (&(p->msg.command)))[1],
+            ((char*) (&(p->msg.command)))[2],
+            ((char*) (&(p->msg.command)))[3]);
     print_packet("recv", p);
 
     switch(p->msg.command){
@@ -680,9 +682,11 @@ void start_device_log(void)
     dup2(fd, 1);
     dup2(fd, 2);
     fprintf(stderr,"--- adb starting (pid %d) ---\n", getpid());
+    adb_close(fd);
 
     fd = unix_open("/dev/null", O_RDONLY);
     dup2(fd, 0);
+    adb_close(fd);
 }
 #endif
 
@@ -873,7 +877,7 @@ int adb_main(int is_daemon, int server_port)
             // don't run as root if ro.secure is set...
             secure = 1;
 
-            // ... except we allow running as root in userdebug builds if the 
+            // ... except we allow running as root in userdebug builds if the
             // service.adb.root property has been set by the "adb root" command
             property_get("ro.debuggable", value, "");
             if (strcmp(value, "1") == 0) {
@@ -1264,8 +1268,8 @@ int recovery_mode = 0;
 
 int main(int argc, char **argv)
 {
-    adb_trace_init();
 #if ADB_HOST
+    adb_trace_init();
     adb_sysdeps_init();
     return adb_commandline(argc - 1, argv + 1);
 #else
