@@ -117,11 +117,8 @@ int builtInVendorIds[] = {
     VENDOR_ID_KT_TECH,
     VENDOR_ID_ASUS,
     VENDOR_ID_PHILIPS,
-<<<<<<< HEAD
     VENDOR_ID_IDROID,
-=======
     VENDOR_ID_TI,
->>>>>>> 034117e47f2601d46563461a0bfe3cc22f89a0f0
 };
 
 #define BUILT_IN_VENDOR_COUNT    (sizeof(builtInVendorIds)/sizeof(builtInVendorIds[0]))
