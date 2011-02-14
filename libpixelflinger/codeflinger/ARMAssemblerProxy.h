@@ -115,7 +115,6 @@ public:
                 int Rd, int Rm, int Rs, int Rn);
 
     virtual void UXTB16(int cc, int Rd, int Rm, int rotate);
-    virtual void UBFX(int cc, int Rd, int Rn, int lsb, int width);
 
 private:
     ARMAssemblerInterface*  mTarget;

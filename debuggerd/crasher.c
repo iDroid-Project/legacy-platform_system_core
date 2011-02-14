@@ -19,7 +19,6 @@
 
 void crash1(void);
 void crashnostack(void);
-void maybeabort(void);
 
 static void debuggerd_connect()
 {

@@ -50,26 +50,14 @@ int SocketClient::sendMsg(const char *msg) {
     }
 
     // Send the message including null character
-    if (sendData(msg, strlen(msg) + 1) != 0) {
-        SLOGW("Unable to send msg '%s'", msg);
-        return -1;
-    }
-    return 0;
-}
-
-int SocketClient::sendData(const void* data, int len) {
     int rc = 0;
-    const char *p = (const char*) data;
-    int brtw = len;
-
-    if (len == 0) {
-        return 0;
-    }
+    const char *p = msg;
+    int brtw = strlen(msg) + 1;
 
     pthread_mutex_lock(&mWriteMutex);
-    while (brtw > 0) {
-        if ((rc = write(mSocket, p, brtw)) < 0) {
-            SLOGW("write error (%s)", strerror(errno));
+    while(brtw) {
+        if ((rc = write(mSocket,p, brtw)) < 0) {
+            SLOGW("Unable to send msg '%s' (%s)", msg, strerror(errno));
             pthread_mutex_unlock(&mWriteMutex);
             return -1;
         } else if (!rc) {

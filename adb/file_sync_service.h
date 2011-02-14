@@ -17,7 +17,7 @@
 #ifndef _FILE_SYNC_SERVICE_H_
 #define _FILE_SYNC_SERVICE_H_
 
-#ifdef HAVE_BIG_ENDIAN
+#ifdef __ppc__
 static inline unsigned __swap_uint32(unsigned x) 
 {
     return (((x) & 0xFF000000) >> 24)
